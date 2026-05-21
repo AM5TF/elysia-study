@@ -1,27 +1,15 @@
 import { Elysia, t } from 'elysia'
 import { memoService } from './service.js'
+import { CreateMemoInput, ErrorResponse, Memo, MemoParamsSchema, UpdateMemoInput } from './model.js'
 
-const memoBodySchema = t.Object({
-  title: t.String({
-    minLength: 1,
-    maxLength: 100
-  }),
-  content: t.Optional(
-    t.String({
-      maxLength: 1000
-    })
-  )
-})
-
-const memoParamsSchema = t.Object({
-  id: t.Number()
-})
 
 export const memosRoute = new Elysia({
   prefix: '/memos'
 })
   .get('/', () => {
     return memoService.getAll()
+  }, {
+    response: t.Array(Memo)
   })
 
   .get('/:id', ({ params, status }) => {
@@ -35,7 +23,11 @@ export const memosRoute = new Elysia({
 
     return memo
   }, {
-    params: memoParamsSchema
+    params: MemoParamsSchema,
+    response: {
+      200: Memo,
+      404: ErrorResponse
+    }
   })
 
   .post('/', ({ body, status }) => {
@@ -46,7 +38,13 @@ export const memosRoute = new Elysia({
       memo: newMemo
     })
   }, {
-    body: memoBodySchema
+    body: CreateMemoInput,
+    response: {
+      201: t.Object({
+        message: t.String(),
+        memo: Memo
+      })
+    }
   })
 
   .put('/:id', ({ params, body, status }) => {
@@ -63,8 +61,15 @@ export const memosRoute = new Elysia({
       memo: updatedMemo
     }
   }, {
-    params: memoParamsSchema,
-    body: memoBodySchema
+    params: MemoParamsSchema,
+    body: UpdateMemoInput,
+    response: {
+      200: t.Object({
+        message: t.String(),
+        memo: Memo
+      }),
+      404: ErrorResponse
+    }
   })
 
   .delete('/:id', ({ params, status }) => {
@@ -81,5 +86,12 @@ export const memosRoute = new Elysia({
       memo: deletedMemo
     }
   }, {
-    params: memoParamsSchema
+    params: MemoParamsSchema,
+    response: {
+      200: t.Object({
+        message: t.String(),
+        memo: Memo
+      }),
+      404: ErrorResponse
+    }
   })

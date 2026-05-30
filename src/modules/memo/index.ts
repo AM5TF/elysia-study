@@ -1,5 +1,6 @@
-import { Elysia, t } from 'elysia'
+import { Elysia, status, t } from 'elysia'
 import { memoService } from './service.js'
+import { db } from '../../db/index.js'
 
 const memoBodySchema = t.Object({
   title: t.String({
@@ -20,16 +21,16 @@ const memoParamsSchema = t.Object({
 export const memosRoute = new Elysia({
   prefix: '/memos'
 })
-  .get('/', () => {
-    return memoService.getAll()
+  .get('/', async () => {
+    const memoList = await memoService.getAll()
+    return memoList
   })
+  .get('/:id', async ({ params, status }) => {
+    const memo = await memoService.findById(params.id)
 
-  .get('/:id', ({ params, status }) => {
-    const memo = memoService.findById(params.id)
-
-    if (!memo) {
+    if(!memo) {
       return status(404, {
-        message: 'メモが見つかりません'
+        message: 'メモが見つからない'
       })
     }
 
@@ -37,47 +38,44 @@ export const memosRoute = new Elysia({
   }, {
     params: memoParamsSchema
   })
-
-  .post('/', ({ body, status }) => {
-    const newMemo = memoService.create(body)
+  .post('/', async ({ body, status }) => {
+    const newMemo = await memoService.create(body)
 
     return status(201, {
-      message: 'メモを作成しました',
+      message: 'メモを作成した',
       memo: newMemo
     })
   }, {
     body: memoBodySchema
   })
+  .put('/:id', async ({ params, body, status }) => {
+    const updatedMemo = await memoService.update(params.id, body)
 
-  .put('/:id', ({ params, body, status }) => {
-    const updatedMemo = memoService.update(params.id, body)
-
-    if (!updatedMemo) {
+    if(!updatedMemo) {
       return status(404, {
-        message: 'メモが見つかりません'
+        message: 'メモが見つからない'
       })
     }
 
     return {
-      message: 'メモを更新しました',
+      message: 'メモを更新した',
       memo: updatedMemo
     }
   }, {
     params: memoParamsSchema,
     body: memoBodySchema
   })
+  .delete('/:id', async ({ params, status }) => {
+    const deletedMemo = await memoService.delete(params.id)
 
-  .delete('/:id', ({ params, status }) => {
-    const deletedMemo = memoService.delete(params.id)
-
-    if (!deletedMemo) {
+    if(!deletedMemo) {
       return status(404, {
-        message: 'メモが見つかりません'
+        message: 'メモが見つからない'
       })
     }
 
     return {
-      message: 'メモを削除しました',
+      message: 'メモを削除した',
       memo: deletedMemo
     }
   }, {
